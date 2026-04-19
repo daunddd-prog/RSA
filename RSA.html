@@ -26,6 +26,8 @@
         @media (max-width: 768px) { .sidebar { min-height: auto; } }
         .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1100; }
         .setup-guide { background: #fff3cd; border-left: 5px solid #ffc107; }
+        .loading-spinner { text-align: center; padding: 50px; }
+        .loading-spinner .spinner-border { width: 3rem; height: 3rem; }
     </style>
 </head>
 <body>
@@ -65,7 +67,7 @@
                 <span class="badge-soft"><i class="far fa-clock"></i> <span id="liveDate"></span></span>
             </div>
             <div id="dynamicContent">
-                <div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Loading secure portal...</p></div>
+                <div class="loading-spinner"><div class="spinner-border text-primary"></div><p class="mt-2">Loading secure portal...</p></div>
             </div>
             <footer class="text-center text-muted mt-5 pt-3 border-top">
                 <small>Realtime Service • Powered by Google Sheets (No Database Cost)</small>
@@ -86,14 +88,11 @@
 
 <script>
 // ======================= CONFIGURATION =======================
-// 🔴 IMPORTANT: REPLACE WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL 🔴
-// Example: "https://script.google.com/macros/s/AKfycbx.../exec"
+// 🔴 REPLACE WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL 🔴
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwC2mFbUyA-6YkrWXLT2EFUsafzvSHhrL7peGW767L2pJzDR31mk7VYD3ovN9szQ5sn1g/exec";  
 // =============================================================
 
-// Wait for DOM and Bootstrap to be fully ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Validate URL configuration
     function isUrlConfigured() {
         return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE" && APPS_SCRIPT_URL.startsWith("http");
     }
@@ -103,14 +102,21 @@ document.addEventListener('DOMContentLoaded', function() {
     let policies = [];
     let chartInstance = null;
 
-    // Helper: Show toast notification
+    // Show loading spinner in main content area
+    function showLoadingSpinner() {
+        document.getElementById('dynamicContent').innerHTML = `
+            <div class="loading-spinner">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Loading ${currentPage}...</p>
+            </div>
+        `;
+    }
+
     function showToast(message, type = 'success') {
         const container = document.querySelector('.toast-container');
         const toastEl = document.createElement('div');
         toastEl.className = `toast align-items-center text-white bg-${type} border-0 mb-2`;
         toastEl.setAttribute('role', 'alert');
-        toastEl.setAttribute('aria-live', 'assertive');
-        toastEl.setAttribute('aria-atomic', 'true');
         toastEl.innerHTML = `
             <div class="d-flex">
                 <div class="toast-body">${message}</div>
@@ -123,10 +129,9 @@ document.addEventListener('DOMContentLoaded', function() {
         toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     }
 
-    // API call to Google Apps Script
     async function callAPI(path, method, params = {}) {
         if (!isUrlConfigured()) {
-            throw new Error('Google Apps Script URL is not configured. Please edit the HTML file and set APPS_SCRIPT_URL to your deployed web app URL.');
+            throw new Error('Google Apps Script URL not configured. Please edit HTML and set APPS_SCRIPT_URL.');
         }
         try {
             const url = new URL(APPS_SCRIPT_URL);
@@ -137,20 +142,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     url.searchParams.append(key, params[key]);
                 }
             }
-            const response = await fetch(url.toString(), { method: 'GET' });
+            const response = await fetch(url.toString());
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
             if (data.error) throw new Error(data.error);
             return data;
         } catch (err) {
             console.error('API call failed:', err);
-            throw new Error(err.message || 'Network or server error');
+            throw new Error(err.message || 'Network error');
         }
     }
 
-    // Show setup guide if URL not configured
     function showSetupGuide() {
-        const guideHtml = `
+        document.getElementById('dynamicContent').innerHTML = `
             <div class="setup-guide card p-4 mx-auto mt-5" style="max-width: 800px;">
                 <h4 class="text-warning"><i class="fas fa-exclamation-triangle"></i> Google Sheets Backend Not Configured</h4>
                 <p>You need to deploy the Apps Script backend and set the URL in the HTML file.</p>
@@ -158,25 +162,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h6>📋 Step-by-Step Setup:</h6>
                 <ol>
                     <li>Create a Google Sheet with two sheets: <code>customers</code> and <code>policies</code>.</li>
-                    <li>In <code>customers</code>, create columns: <strong>id, name, mobile, vehicle_number</strong></li>
-                    <li>In <code>policies</code>, create columns: <strong>id, customer_id, policy_number, expiry_date, price</strong></li>
-                    <li>Open <strong>Extensions → Apps Script</strong>, paste the backend code (provided in previous assistant message).</li>
-                    <li>Deploy as <strong>Web App</strong> (Execute as: Me, Access: Anyone). Copy the URL.</li>
-                    <li>Open this HTML file, find <code>const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";</code> and replace with your URL.</li>
+                    <li>In <code>customers</code>, columns: <strong>id, name, mobile, vehicle_number</strong></li>
+                    <li>In <code>policies</code>, columns: <strong>id, customer_id, policy_number, expiry_date, price</strong></li>
+                    <li>Open <strong>Extensions → Apps Script</strong>, paste the backend code.</li>
+                    <li>Deploy as <strong>Web App</strong> (Execute as: Me, Access: Anyone). Copy URL.</li>
+                    <li>Replace <code>YOUR_APPS_SCRIPT_URL_HERE</code> with that URL.</li>
                     <li>Refresh this page.</li>
                 </ol>
-                <p class="text-muted mt-3"><i class="fas fa-info-circle"></i> Need the complete Apps Script code? Ask the assistant for "full Apps Script backend code".</p>
             </div>
         `;
-        document.getElementById('dynamicContent').innerHTML = guideHtml;
     }
 
-    // Load customers and policies from Google Sheets
+    // Load data and then render the current page (with loading spinner)
     async function loadAllData() {
         if (!isUrlConfigured()) {
             showSetupGuide();
             return;
         }
+        showLoadingSpinner();  // <-- Show spinner before fetching
         try {
             const [custData, polData] = await Promise.all([
                 callAPI('customers', 'GET'),
@@ -184,21 +187,20 @@ document.addEventListener('DOMContentLoaded', function() {
             ]);
             customers = custData.customers || [];
             policies = polData.policies || [];
-            renderCurrentPage();
+            await renderCurrentPage();  // render after data loaded
         } catch (err) {
             document.getElementById('dynamicContent').innerHTML = `<div class="alert alert-danger">Failed to load data: ${err.message}</div>`;
         }
     }
 
-    // Render based on current page
-    function renderCurrentPage() {
-        if (currentPage === 'dashboard') renderDashboard();
+    async function renderCurrentPage() {
+        // This function will be called after data is loaded.
+        if (currentPage === 'dashboard') await renderDashboard();
         else if (currentPage === 'customers') renderCustomers();
         else if (currentPage === 'policies') renderPolicies();
         else if (currentPage === 'search') renderSearch();
-        else if (currentPage === 'reminders') renderReminders();
+        else if (currentPage === 'reminders') await renderReminders();
         
-        // Update active nav link
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('data-page') === currentPage) link.classList.add('active');
@@ -207,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('pageTitle').innerText = titles[currentPage];
     }
 
-    // ---------- DASHBOARD ----------
+    // Dashboard render (async because it calls API)
     async function renderDashboard() {
         try {
             const stats = await callAPI('dashboard-stats', 'GET');
@@ -225,29 +227,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card mt-4 p-3"><h5>📋 Recently Added Policies</h5><div id="recentPolicies"></div></div>
             `;
             document.getElementById('dynamicContent').innerHTML = html;
-            
-            // Chart
             if (chartInstance) chartInstance.destroy();
-            const ctx = document.getElementById('policyChart').getContext('2d');
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels: ['Active', 'Expired'], datasets: [{ data: [stats.activePolicies, stats.expiredPolicies], backgroundColor: ['#2c3e8f', '#e26d5c'] }] }
-            });
-            
-            // Expiring list
+            const ctx = document.getElementById('policyChart')?.getContext('2d');
+            if (ctx) {
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { labels: ['Active', 'Expired'], datasets: [{ data: [stats.activePolicies, stats.expiredPolicies], backgroundColor: ['#2c3e8f', '#e26d5c'] }] }
+                });
+            }
             const expiringList = stats.expiringSoonList || [];
             const ul = document.getElementById('expiringList');
-            ul.innerHTML = expiringList.map(p => `<li class="list-group-item d-flex justify-content-between">${p.policy_number} - ${p.customer_name} <span class="badge bg-warning">${p.expiry_date}</span></li>`).join('') || '<li class="list-group-item">No policies expiring soon</li>';
-            
-            // Recent policies
+            if (ul) ul.innerHTML = expiringList.map(p => `<li class="list-group-item d-flex justify-content-between">${p.policy_number} - ${p.customer_name} <span class="badge bg-warning">${p.expiry_date}</span></li>`).join('') || '<li class="list-group-item">No policies expiring soon</li>';
             const recent = stats.recentPolicies || [];
-            document.getElementById('recentPolicies').innerHTML = `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Policy#</th><th>Customer</th><th>Expiry</th></tr></thead><tbody>${recent.map(p => `<tr><td>${p.policy_number}</td><td>${p.customer_name}</td><td>${p.expiry_date}</td></tr>`).join('')}</tbody></table></div>`;
+            const recentDiv = document.getElementById('recentPolicies');
+            if (recentDiv) recentDiv.innerHTML = `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Policy#</th><th>Customer</th><th>Expiry</th></tr></thead><tbody>${recent.map(p => `<tr><td>${p.policy_number}</td><td>${p.customer_name}</td><td>${p.expiry_date}</td></tr>`).join('')}</tbody></table></div>`;
         } catch (err) {
             document.getElementById('dynamicContent').innerHTML = `<div class="alert alert-danger">Dashboard error: ${err.message}</div>`;
         }
     }
 
-    // ---------- CUSTOMERS ----------
     function renderCustomers() {
         let html = `<div class="d-flex justify-content-between mb-3"><h5>All Customers</h5><button class="btn btn-accent" id="addCustomerBtn"><i class="fas fa-plus"></i> New Customer</button></div>
         <div class="table-responsive"><table class="table table-bordered table-custom"><thead><tr><th>ID</th><th>Name</th><th>Mobile</th><th>Vehicle No</th><th>Policies Count</th><th>Actions</th></tr></thead><tbody>`;
@@ -259,7 +257,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         html += `</tbody></table></div>`;
         document.getElementById('dynamicContent').innerHTML = html;
-        
         document.getElementById('addCustomerBtn')?.addEventListener('click', () => openCustomerModal());
         document.querySelectorAll('.edit-customer').forEach(btn => btn.addEventListener('click', () => openCustomerModal(btn.dataset.id)));
         document.querySelectorAll('.delete-customer').forEach(btn => btn.addEventListener('click', async () => {
@@ -271,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }));
     }
 
-    // ---------- POLICIES ----------
     function renderPolicies() {
         let html = `<div class="d-flex justify-content-between mb-3"><h5>RSA Policies</h5><button class="btn btn-accent" id="addPolicyBtn"><i class="fas fa-plus"></i> New Policy</button></div>
         <div class="table-responsive"><table class="table table-bordered table-custom"><thead><tr><th>Policy#</th><th>Customer</th><th>Vehicle</th><th>Expiry Date</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>`;
@@ -286,7 +282,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         html += `</tbody></table></div>`;
         document.getElementById('dynamicContent').innerHTML = html;
-        
         document.getElementById('addPolicyBtn')?.addEventListener('click', () => openPolicyModal());
         document.querySelectorAll('.edit-policy').forEach(btn => btn.addEventListener('click', () => openPolicyModal(btn.dataset.id)));
         document.querySelectorAll('.delete-policy').forEach(btn => btn.addEventListener('click', async () => {
@@ -299,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.renew-policy').forEach(btn => btn.addEventListener('click', () => openRenewModal(btn.dataset.id, btn.dataset.expiry)));
     }
 
-    // ---------- SEARCH ----------
     function renderSearch() {
         const html = `<div class="card p-4"><h5>🔍 Search Policies & Customers</h5><div class="row g-3"><div class="col-md-4"><select id="searchType" class="form-select"><option value="mobile">Mobile Number</option><option value="vehicle">Vehicle Number</option><option value="policy">Policy Number</option></select></div>
         <div class="col-md-6"><input type="text" id="searchQuery" class="form-control" placeholder="Enter search term..."></div><div class="col-md-2"><button id="doSearch" class="btn btn-accent w-100">Search</button></div></div>
@@ -321,7 +315,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---------- REMINDERS ----------
     async function renderReminders() {
         try {
             const stats = await callAPI('dashboard-stats', 'GET');
@@ -344,7 +337,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ---------- MODAL HANDLERS ----------
     function openCustomerModal(id = null) {
         if (id) {
             const cust = customers.find(c => c.id == id);
@@ -360,8 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('custMobile').value = '';
             document.getElementById('custVehicle').value = '';
         }
-        const modalEl = document.getElementById('customerModal');
-        const modal = new bootstrap.Modal(modalEl);
+        const modal = new bootstrap.Modal(document.getElementById('customerModal'));
         modal.show();
     }
 
@@ -384,8 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('policyPrice').value = '1499';
             document.getElementById('policyCustomerId').value = '';
         }
-        const modalEl = document.getElementById('policyModal');
-        const modal = new bootstrap.Modal(modalEl);
+        const modal = new bootstrap.Modal(document.getElementById('policyModal'));
         modal.show();
     }
 
@@ -395,12 +385,10 @@ document.addEventListener('DOMContentLoaded', function() {
         let nextYear = new Date(currentExpiry);
         nextYear.setFullYear(nextYear.getFullYear() + 1);
         document.getElementById('newExpiryDate').value = nextYear.toISOString().slice(0, 10);
-        const modalEl = document.getElementById('renewModal');
-        const modal = new bootstrap.Modal(modalEl);
+        const modal = new bootstrap.Modal(document.getElementById('renewModal'));
         modal.show();
     }
 
-    // Helper: escape HTML
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -411,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Attach event listeners for modals after DOM is ready
+    // Save customer
     document.getElementById('saveCustomerBtn')?.addEventListener('click', async () => {
         const id = document.getElementById('customerId').value;
         const payload = {
@@ -423,8 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             if (id) await callAPI('customers', 'PUT', { id, ...payload });
             else await callAPI('customers', 'POST', payload);
-            const modalEl = document.getElementById('customerModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('customerModal'));
             modal.hide();
             await loadAllData();
             showToast('Customer saved successfully');
@@ -444,8 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             if (id) await callAPI('policies', 'PUT', { id, ...payload });
             else await callAPI('policies', 'POST', payload);
-            const modalEl = document.getElementById('policyModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('policyModal'));
             modal.hide();
             await loadAllData();
             showToast('Policy saved successfully');
@@ -458,22 +444,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!newExpiry) return showToast('Select new expiry date', 'warning');
         try {
             await callAPI('renew', 'POST', { id: policyId, new_expiry: newExpiry });
-            const modalEl = document.getElementById('renewModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('renewModal'));
             modal.hide();
             await loadAllData();
             showToast('Policy renewed successfully!', 'success');
         } catch (err) { showToast(err.message, 'danger'); }
     });
 
-    // Navigation & Logout
+    // Tab navigation with loading spinner
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            currentPage = link.getAttribute('data-page');
-            loadAllData();
+            const newPage = link.getAttribute('data-page');
+            if (newPage === currentPage) return;
+            currentPage = newPage;
+            loadAllData();  // This shows spinner then loads data
         });
     });
+
     document.getElementById('logoutBtn').addEventListener('click', () => {
         if (confirm('Logout?')) {
             sessionStorage.removeItem('loggedIn');
@@ -482,7 +470,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('liveDate').innerText = new Date().toLocaleDateString('en-IN');
 
-    // Simple login protection (hardcoded password)
+    // Login check
     if (!sessionStorage.getItem('loggedIn')) {
         let pwd = prompt("Admin Login - Enter Password:");
         if (pwd === 'admin123') {
