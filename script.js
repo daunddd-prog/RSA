@@ -11,7 +11,7 @@ let chartInstance = null;
 
 // Helper: Check if URL is configured
 function isUrlConfigured() {
-    return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec" && APPS_SCRIPT_URL.startsWith("http");
+    return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "--" && APPS_SCRIPT_URL.startsWith("http");
 }
 
 // Show loading spinner
