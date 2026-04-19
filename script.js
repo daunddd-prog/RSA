@@ -1,6 +1,6 @@
 // ======================= CONFIGURATION =======================
 // 🔴 REPLACE WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL 🔴
-const APPS_SCRIPT_URL = "Yhttps://script.google.com/macros/s/AKfycbwC2mFbUyA-6YkrWXLT2EFUsafzvSHhrL7peGW767L2pJzDR31mk7VYD3ovN9szQ5sn1g/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec";
 // =============================================================
 
 // Global state
@@ -11,7 +11,7 @@ let chartInstance = null;
 
 // Helper: Check if URL is configured
 function isUrlConfigured() {
-    return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbwC2mFbUyA-6YkrWXLT2EFUsafzvSHhrL7peGW767L2pJzDR31mk7VYD3ovN9szQ5sn1g/exec" && APPS_SCRIPT_URL.startsWith("http");
+    return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec" && APPS_SCRIPT_URL.startsWith("http");
 }
 
 // Show loading spinner
@@ -87,7 +87,7 @@ function showSetupGuide() {
                 <li>In <code>policies</code>, columns: <strong>id, customer_id, policy_number, expiry_date, price</strong></li>
                 <li>Open <strong>Extensions → Apps Script</strong>, paste the backend code.</li>
                 <li>Deploy as <strong>Web App</strong> (Execute as: Me, Access: Anyone). Copy URL.</li>
-                <li>Replace <code>https://script.google.com/macros/s/AKfycbwC2mFbUyA-6YkrWXLT2EFUsafzvSHhrL7peGW767L2pJzDR31mk7VYD3ovN9szQ5sn1g/exec</code> with that URL in <code>script.js</code>.</li>
+                <li>Replace <code>https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec</code> with that URL in <code>script.js</code>.</li>
                 <li>Refresh this page.</li>
             </ol>
         </div>
