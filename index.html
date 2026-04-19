@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Realtime Service | RSA Policy Portal</title>
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Bootstrap 5 (only grid & utilities, we override most styles) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-car-side"></i>
+                </div>
+                <h2>Realtime<span>Service</span></h2>
+                <p class="brand-tagline">RSA Policy Portal</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="customers">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </a>
+                <a href="#" class="nav-item" data-page="policies">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Policies</span>
+                </a>
+                <a href="#" class="nav-item" data-page="search">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </a>
+                <a href="#" class="nav-item" data-page="reminders">
+                    <i class="fas fa-bell"></i>
+                    <span>Reminders</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="owner-info">
+                    <i class="fas fa-phone-alt"></i> 8788892145<br>
+                    <i class="fas fa-envelope"></i> Admindg100@gmail.com
+                </div>
+                <button id="logoutBtn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-title">
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <span class="date-badge"><i class="far fa-calendar-alt"></i> <span id="liveDate"></span></span>
+                </div>
+                <div class="header-actions">
+                    <div class="notification-badge">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="user-avatar">
+                        <span>AD</span>
+                    </div>
+                </div>
+            </header>
+            <div id="dynamicContent" class="dynamic-content">
+                <div class="loading-overlay">
+                    <div class="spinner"></div>
+                    <p>Loading secure portal...</p>
+                </div>
+            </div>
+            <footer class="main-footer">
+                <p>Realtime Service • Powered by Google Sheets (No Database Cost)</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Modals (same as before, but styled) -->
+    <div class="modal fade" id="customerModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus"></i> Add / Edit Customer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="customerId">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="custName" class="form-control" placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile Number *</label>
+                        <input type="tel" id="custMobile" class="form-control" placeholder="10-digit number">
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Number *</label>
+                        <input type="text" id="custVehicle" class="form-control" placeholder="MH01AB1234">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" id="saveCustomerBtn">Save Customer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="policyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-contract"></i> RSA Policy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="policyId">
+                    <div class="form-group">
+                        <label>Customer *</label>
+                        <select id="policyCustomerId" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Policy Number *</label>
+                        <input type="text" id="policyNumber" class="form-control" placeholder="RSA/2026/001">
+                    </div>
+                    <div class="form-group">
+                        <label>Expiry Date *</label>
+                        <input type="date" id="policyExpiry" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Policy Price (₹)</label>
+                        <input type="number" id="policyPrice" class="form-control" value="1499" step="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" id="savePolicyBtn">Save Policy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="renewModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-modal">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title"><i class="fas fa-sync-alt"></i> Renew Policy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="renewPolicyId">
+                    <p>Current expiry: <strong id="currentExpiry"></strong></p>
+                    <div class="form-group">
+                        <label>New Expiry Date *</label>
+                        <input type="date" id="newExpiryDate" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-success" id="confirmRenewBtn">Renew Policy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
