@@ -443,3 +443,15 @@ body {
     backdrop-filter: blur(8px);
     border-radius: 16px;
 }
+
+/* Header hide on scroll */
+.main-header {
+    transition: transform 0.3s ease-in-out;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.main-header.header-hidden {
+    transform: translateY(-100%);
+}

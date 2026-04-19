@@ -1,5 +1,4 @@
 // ======================= CONFIGURATION =======================
-// 🔴 Your Google Apps Script Web App URL (replace if needed)
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec";
 // =============================================================
 
@@ -9,17 +8,14 @@ let customers = [];
 let policies = [];
 let chartInstance = null;
 
-// ✅ Improved URL validation (fixes "not configured" error)
+// ✅ Improved URL validation
 function isUrlConfigured() {
     if (!APPS_SCRIPT_URL) return false;
-    // List of placeholder values that are not real URLs
     const placeholders = ["YOUR_APPS_SCRIPT_URL_HERE", "--", "", "your-url-here"];
     if (placeholders.includes(APPS_SCRIPT_URL)) return false;
-    // Must start with http:// or https:// and contain 'script.google.com'
     return APPS_SCRIPT_URL.startsWith("http") && APPS_SCRIPT_URL.includes("script.google.com");
 }
 
-// Optional: log to console for debugging
 console.log("Apps Script URL configured:", isUrlConfigured());
 
 // Show loading spinner
@@ -34,13 +30,13 @@ function showLoadingSpinner() {
 
 // Toast notification
 function showToast(message, type = 'success') {
-    const container = document.querySelector('.toast-container');
+    let container = document.querySelector('.toast-container');
     if (!container) {
         const div = document.createElement('div');
         div.className = 'toast-container';
         document.body.appendChild(div);
+        container = div;
     }
-    const toastContainer = document.querySelector('.toast-container');
     const toastEl = document.createElement('div');
     toastEl.className = `toast align-items-center text-white bg-${type} border-0 mb-2`;
     toastEl.setAttribute('role', 'alert');
@@ -50,16 +46,16 @@ function showToast(message, type = 'success') {
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     `;
-    toastContainer.appendChild(toastEl);
+    container.appendChild(toastEl);
     const bsToast = new bootstrap.Toast(toastEl, { delay: 3000 });
     bsToast.show();
     toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
 }
 
-// API call to Google Apps Script
+// API call
 async function callAPI(path, method, params = {}) {
     if (!isUrlConfigured()) {
-        throw new Error('Google Apps Script URL not configured. Please edit script.js and set APPS_SCRIPT_URL.');
+        throw new Error('Google Apps Script URL not configured.');
     }
     try {
         const url = new URL(APPS_SCRIPT_URL);
@@ -81,7 +77,7 @@ async function callAPI(path, method, params = {}) {
     }
 }
 
-// Show setup guide if URL not configured
+// Show setup guide
 function showSetupGuide() {
     document.getElementById('dynamicContent').innerHTML = `
         <div class="setup-guide">
@@ -177,22 +173,7 @@ async function renderDashboard() {
         document.getElementById('dynamicContent').innerHTML = `<div class="alert alert-danger">Dashboard error: ${err.message}</div>`;
     }
 }
-// Hide header on scroll down, show on scroll up
-let lastScrollY = window.scrollY;
-const header = document.querySelector('.main-header');
 
-window.addEventListener('scroll', () => {
-    if (!header) return;
-    const currentScrollY = window.scrollY;
-    if (currentScrollY > lastScrollY && currentScrollY > 80) {
-        // Scrolling down & past 80px – hide header
-        header.classList.add('header-hidden');
-    } else if (currentScrollY < lastScrollY) {
-        // Scrolling up – show header
-        header.classList.remove('header-hidden');
-    }
-    lastScrollY = currentScrollY;
-});
 // ==================== CUSTOMERS ====================
 function renderCustomers() {
     let html = `<div class="d-flex justify-content-between align-items-center mb-4"><h3>All Customers</h3><button class="btn btn-primary" id="addCustomerBtn"><i class="fas fa-plus"></i> New Customer</button></div>
@@ -211,7 +192,6 @@ function renderCustomers() {
     document.querySelectorAll('.delete-customer').forEach(btn => btn.addEventListener('click', async () => {
         if (confirm('Delete customer? All linked policies will also be removed.')) {
             await callAPI('customers', 'DELETE', { id: btn.dataset.id });
-            
             await loadAllData();
             showToast('Customer deleted');
         }
@@ -401,7 +381,7 @@ function escapeHtml(str) {
 
 // ==================== INIT & NAVIGATION ====================
 document.addEventListener('DOMContentLoaded', () => {
-    // Navigation (existing)
+    // Navigation
     document.querySelectorAll('.nav-item').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -420,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('liveDate').innerText = new Date().toLocaleDateString('en-IN');
 
-    // ========== NEW: Hide header on scroll down ==========
+    // ✅ Hide header on scroll down, show on scroll up
     let lastScrollY = window.scrollY;
     const header = document.querySelector('.main-header');
     window.addEventListener('scroll', () => {
@@ -433,9 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         lastScrollY = currentScrollY;
     });
-    // =====================================================
 
-    // Login check (existing)
+    // Login check
     if (!sessionStorage.getItem('loggedIn')) {
         let pwd = prompt("Admin Login - Enter Password:");
         if (pwd === 'admin123') {
