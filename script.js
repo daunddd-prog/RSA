@@ -1,5 +1,5 @@
 // ======================= CONFIGURATION =======================
-// 🔴 REPLACE WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL 🔴
+// 🔴 Your Google Apps Script Web App URL (replace if needed)
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec";
 // =============================================================
 
@@ -9,10 +9,18 @@ let customers = [];
 let policies = [];
 let chartInstance = null;
 
-// Helper: Check if URL is configured
+// ✅ Improved URL validation (fixes "not configured" error)
 function isUrlConfigured() {
-    return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "--" && APPS_SCRIPT_URL.startsWith("http");
+    if (!APPS_SCRIPT_URL) return false;
+    // List of placeholder values that are not real URLs
+    const placeholders = ["YOUR_APPS_SCRIPT_URL_HERE", "--", "", "your-url-here"];
+    if (placeholders.includes(APPS_SCRIPT_URL)) return false;
+    // Must start with http:// or https:// and contain 'script.google.com'
+    return APPS_SCRIPT_URL.startsWith("http") && APPS_SCRIPT_URL.includes("script.google.com");
 }
+
+// Optional: log to console for debugging
+console.log("Apps Script URL configured:", isUrlConfigured());
 
 // Show loading spinner
 function showLoadingSpinner() {
@@ -87,7 +95,7 @@ function showSetupGuide() {
                 <li>In <code>policies</code>, columns: <strong>id, customer_id, policy_number, expiry_date, price</strong></li>
                 <li>Open <strong>Extensions → Apps Script</strong>, paste the backend code.</li>
                 <li>Deploy as <strong>Web App</strong> (Execute as: Me, Access: Anyone). Copy URL.</li>
-                <li>Replace <code>https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec</code> with that URL in <code>script.js</code>.</li>
+                <li>Replace <code>APPS_SCRIPT_URL</code> in <code>script.js</code> with that URL.</li>
                 <li>Refresh this page.</li>
             </ol>
         </div>
