@@ -177,7 +177,22 @@ async function renderDashboard() {
         document.getElementById('dynamicContent').innerHTML = `<div class="alert alert-danger">Dashboard error: ${err.message}</div>`;
     }
 }
+// Hide header on scroll down, show on scroll up
+let lastScrollY = window.scrollY;
+const header = document.querySelector('.main-header');
 
+window.addEventListener('scroll', () => {
+    if (!header) return;
+    const currentScrollY = window.scrollY;
+    if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        // Scrolling down & past 80px – hide header
+        header.classList.add('header-hidden');
+    } else if (currentScrollY < lastScrollY) {
+        // Scrolling up – show header
+        header.classList.remove('header-hidden');
+    }
+    lastScrollY = currentScrollY;
+});
 // ==================== CUSTOMERS ====================
 function renderCustomers() {
     let html = `<div class="d-flex justify-content-between align-items-center mb-4"><h3>All Customers</h3><button class="btn btn-primary" id="addCustomerBtn"><i class="fas fa-plus"></i> New Customer</button></div>
@@ -196,6 +211,7 @@ function renderCustomers() {
     document.querySelectorAll('.delete-customer').forEach(btn => btn.addEventListener('click', async () => {
         if (confirm('Delete customer? All linked policies will also be removed.')) {
             await callAPI('customers', 'DELETE', { id: btn.dataset.id });
+            
             await loadAllData();
             showToast('Customer deleted');
         }
@@ -385,7 +401,7 @@ function escapeHtml(str) {
 
 // ==================== INIT & NAVIGATION ====================
 document.addEventListener('DOMContentLoaded', () => {
-    // Navigation
+    // Navigation (existing)
     document.querySelectorAll('.nav-item').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -404,7 +420,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('liveDate').innerText = new Date().toLocaleDateString('en-IN');
 
-    // Login check
+    // ========== NEW: Hide header on scroll down ==========
+    let lastScrollY = window.scrollY;
+    const header = document.querySelector('.main-header');
+    window.addEventListener('scroll', () => {
+        if (!header) return;
+        const currentScrollY = window.scrollY;
+        if (currentScrollY > lastScrollY && currentScrollY > 80) {
+            header.classList.add('header-hidden');
+        } else if (currentScrollY < lastScrollY) {
+            header.classList.remove('header-hidden');
+        }
+        lastScrollY = currentScrollY;
+    });
+    // =====================================================
+
+    // Login check (existing)
     if (!sessionStorage.getItem('loggedIn')) {
         let pwd = prompt("Admin Login - Enter Password:");
         if (pwd === 'admin123') {
