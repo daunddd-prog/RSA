@@ -417,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login check
     if (!sessionStorage.getItem('loggedIn')) {
         let pwd = prompt("Admin Login - Enter Password:");
-        if (pwd === 'admin123') {
+        if (pwd === 'admin') {
             sessionStorage.setItem('loggedIn', 'true');
         } else {
             document.body.innerHTML = '<div class="alert alert-danger m-5 text-center">Access Denied. Invalid Password.</div>';
