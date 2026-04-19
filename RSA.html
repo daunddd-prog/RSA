@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Realtime Service | RSA Policy Portal (Google Sheets)</title>
+    <!-- Bootstrap 5 + Icons + Chart.js -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root { --primary: #2c3e8f; --accent: #ff7b2c; }
+        body { background: #f4f7fc; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .sidebar { background: linear-gradient(135deg, #0f2b3d, #1a3a4f); min-height: 100vh; }
+        .sidebar .nav-link { color: #e0eef7; border-radius: 12px; margin: 6px 12px; padding: 12px 18px; transition: all 0.2s; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #ff7b2c; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .sidebar .nav-link i { width: 28px; }
+        .btn-accent { background: #ff7b2c; border: none; color: white; }
+        .btn-accent:hover { background: #e56818; color: white; }
+        .card-stat { border: none; border-radius: 28px; background: white; box-shadow: 0 8px 20px rgba(0,0,0,0.03); transition: transform 0.2s; }
+        .card-stat:hover { transform: translateY(-3px); }
+        .badge-soft { background: #eef2ff; color: #1e3a8a; padding: 6px 12px; border-radius: 40px; }
+        .table-custom th { background: #f1f5f9; font-weight: 600; }
+        .search-highlight { background: #fff3e0; border-left: 4px solid #ff7b2c; }
+        @media (max-width: 768px) { .sidebar { min-height: auto; } }
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1100; }
+        .setup-guide { background: #fff3cd; border-left: 5px solid #ffc107; }
+    </style>
+</head>
+<body>
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 sidebar p-3">
+            <div class="text-center mb-4 mt-2">
+                <div class="bg-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                    <i class="fas fa-car-side fa-3x" style="color: #ff7b2c;"></i>
+                </div>
+                <h5 class="text-white mt-3">Realtime Service</h5>
+                <small class="text-light">RSA Policy Portal</small>
+            </div>
+            <hr class="bg-white-50">
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="#" data-page="dashboard"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                <a class="nav-link" href="#" data-page="customers"><i class="fas fa-users me-2"></i> Customers</a>
+                <a class="nav-link" href="#" data-page="policies"><i class="fas fa-file-alt me-2"></i> Policies</a>
+                <a class="nav-link" href="#" data-page="search"><i class="fas fa-search me-2"></i> Search</a>
+                <a class="nav-link" href="#" data-page="reminders"><i class="fas fa-bell me-2"></i> Reminders</a>
+            </nav>
+            <hr class="bg-white-50">
+            <div class="mt-auto pt-4">
+                <div class="text-white small mb-2">
+                    <i class="fas fa-phone-alt"></i> Owner: 8788892145<br>
+                    <i class="fas fa-envelope"></i> Admindg100@gmail.com
+                </div>
+                <button id="logoutBtn" class="btn btn-outline-light w-100 btn-sm mt-2"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 p-4">
+            <div class="top-navbar d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm">
+                <h4 class="mb-0 fw-semibold" id="pageTitle">Dashboard</h4>
+                <span class="badge-soft"><i class="far fa-clock"></i> <span id="liveDate"></span></span>
+            </div>
+            <div id="dynamicContent">
+                <div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Loading secure portal...</p></div>
+            </div>
+            <footer class="text-center text-muted mt-5 pt-3 border-top">
+                <small>Realtime Service • Powered by Google Sheets (No Database Cost)</small>
+            </footer>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container"></div>
+
+<!-- Modals -->
+<div class="modal fade" id="customerModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title">Add / Edit Customer</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="customerId"><div class="mb-3"><label>Full Name *</label><input id="custName" class="form-control" required></div><div class="mb-3"><label>Mobile Number *</label><input id="custMobile" class="form-control" required></div><div class="mb-3"><label>Vehicle Number *</label><input id="custVehicle" class="form-control" placeholder="MH01AB1234"></div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-accent" id="saveCustomerBtn">Save Customer</button></div></div></div></div>
+
+<div class="modal fade" id="policyModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title">RSA Policy</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="policyId"><div class="mb-3"><label>Customer *</label><select id="policyCustomerId" class="form-select" required></select></div><div class="mb-3"><label>Policy Number *</label><input id="policyNumber" class="form-control" placeholder="RSA/2026/001"></div><div class="mb-3"><label>Expiry Date *</label><input type="date" id="policyExpiry" class="form-control"></div><div class="mb-3"><label>Policy Price (₹)</label><input type="number" id="policyPrice" class="form-control" value="1499" step="1"></div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-accent" id="savePolicyBtn">Save Policy</button></div></div></div></div>
+
+<div class="modal fade" id="renewModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-warning text-dark"><h5 class="modal-title">Renew Policy</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="renewPolicyId"><p>Current expiry: <strong id="currentExpiry"></strong></p><label>New Expiry Date *</label><input type="date" id="newExpiryDate" class="form-control"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-success" id="confirmRenewBtn">Renew Policy</button></div></div></div></div>
+
+<script>
+// ======================= CONFIGURATION =======================
+// 🔴 IMPORTANT: REPLACE WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL 🔴
+// Example: "https://script.google.com/macros/s/AKfycbx.../exec"
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwC2mFbUyA-6YkrWXLT2EFUsafzvSHhrL7peGW767L2pJzDR31mk7VYD3ovN9szQ5sn1g/exec";  
+// =============================================================
+
+// Wait for DOM and Bootstrap to be fully ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Validate URL configuration
+    function isUrlConfigured() {
+        return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE" && APPS_SCRIPT_URL.startsWith("http");
+    }
+
+    let currentPage = 'dashboard';
+    let customers = [];
+    let policies = [];
+    let chartInstance = null;
+
+    // Helper: Show toast notification
+    function showToast(message, type = 'success') {
+        const container = document.querySelector('.toast-container');
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center text-white bg-${type} border-0 mb-2`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        container.appendChild(toastEl);
+        const bsToast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        bsToast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    }
+
+    // API call to Google Apps Script
+    async function callAPI(path, method, params = {}) {
+        if (!isUrlConfigured()) {
+            throw new Error('Google Apps Script URL is not configured. Please edit the HTML file and set APPS_SCRIPT_URL to your deployed web app URL.');
+        }
+        try {
+            const url = new URL(APPS_SCRIPT_URL);
+            url.searchParams.append('path', path);
+            url.searchParams.append('method', method);
+            for (let key in params) {
+                if (params[key] !== undefined && params[key] !== null) {
+                    url.searchParams.append(key, params[key]);
+                }
+            }
+            const response = await fetch(url.toString(), { method: 'GET' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+            return data;
+        } catch (err) {
+            console.error('API call failed:', err);
+            throw new Error(err.message || 'Network or server error');
+        }
+    }
+
+    // Show setup guide if URL not configured
+    function showSetupGuide() {
+        const guideHtml = `
+            <div class="setup-guide card p-4 mx-auto mt-5" style="max-width: 800px;">
+                <h4 class="text-warning"><i class="fas fa-exclamation-triangle"></i> Google Sheets Backend Not Configured</h4>
+                <p>You need to deploy the Apps Script backend and set the URL in the HTML file.</p>
+                <hr>
+                <h6>📋 Step-by-Step Setup:</h6>
+                <ol>
+                    <li>Create a Google Sheet with two sheets: <code>customers</code> and <code>policies</code>.</li>
+                    <li>In <code>customers</code>, create columns: <strong>id, name, mobile, vehicle_number</strong></li>
+                    <li>In <code>policies</code>, create columns: <strong>id, customer_id, policy_number, expiry_date, price</strong></li>
+                    <li>Open <strong>Extensions → Apps Script</strong>, paste the backend code (provided in previous assistant message).</li>
+                    <li>Deploy as <strong>Web App</strong> (Execute as: Me, Access: Anyone). Copy the URL.</li>
+                    <li>Open this HTML file, find <code>const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";</code> and replace with your URL.</li>
+                    <li>Refresh this page.</li>
+                </ol>
+                <p class="text-muted mt-3"><i class="fas fa-info-circle"></i> Need the complete Apps Script code? Ask the assistant for "full Apps Script backend code".</p>
+            </div>
+        `;
+        document.getElementById('dynamicContent').innerHTML = guideHtml;
+    }
+
+    // Load customers and policies from Google Sheets
+    async function loadAllData() {
+        if (!isUrlConfigured()) {
+            showSetupGuide();
+            return;
+        }
+        try {
+            const [custData, polData] = await Promise.all([
+                callAPI('customers', 'GET'),
+                callAPI('policies', 'GET')
+            ]);
+            customers = custData.customers || [];
+            policies = polData.policies || [];
+            renderCurrentPage();
+        } catch (err) {
+            document.getElementById('dynamicContent').innerHTML = `<div class="alert alert-danger">Failed to load data: ${err.message}</div>`;
+        }
+    }
+
+    // Render based on current page
+    function renderCurrentPage() {
+        if (currentPage === 'dashboard') renderDashboard();
+        else if (currentPage === 'customers') renderCustomers();
+        else if (currentPage === 'policies') renderPolicies();
+        else if (currentPage === 'search') renderSearch();
+        else if (currentPage === 'reminders') renderReminders();
+        
+        // Update active nav link
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-page') === currentPage) link.classList.add('active');
+        });
+        const titles = { dashboard: 'Dashboard', customers: 'Customer Management', policies: 'Policy Management', search: 'Search System', reminders: 'Expiry Reminders' };
+        document.getElementById('pageTitle').innerText = titles[currentPage];
+    }
+
+    // ---------- DASHBOARD ----------
+    async function renderDashboard() {
+        try {
+            const stats = await callAPI('dashboard-stats', 'GET');
+            const html = `
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3"><div class="card-stat p-3"><i class="fas fa-file-contract fa-2x text-primary"></i><h3 class="mt-2">${stats.totalPolicies}</h3><span>Total Policies</span></div></div>
+                    <div class="col-md-3"><div class="card-stat p-3"><i class="fas fa-check-circle fa-2x text-success"></i><h3 class="mt-2">${stats.activePolicies}</h3><span>Active Policies</span></div></div>
+                    <div class="col-md-3"><div class="card-stat p-3"><i class="fas fa-hourglass-half fa-2x text-warning"></i><h3 class="mt-2">${stats.expiringSoon}</h3><span>Expiring in 30 days</span></div></div>
+                    <div class="col-md-3"><div class="card-stat p-3"><i class="fas fa-rupee-sign fa-2x" style="color:#ff7b2c;"></i><h3 class="mt-2">₹${stats.totalEarnings.toLocaleString()}</h3><span>Total Earnings</span></div></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6"><canvas id="policyChart" height="200"></canvas></div>
+                    <div class="col-md-6"><div class="card p-3"><h5>⚠️ Expiring Soon (Next 30 days)</h5><ul class="list-group" id="expiringList"></ul></div></div>
+                </div>
+                <div class="card mt-4 p-3"><h5>📋 Recently Added Policies</h5><div id="recentPolicies"></div></div>
+            `;
+            document.getElementById('dynamicContent').innerHTML = html;
+            
+            // Chart
+            if (chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('policyChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: ['Active', 'Expired'], datasets: [{ data: [stats.activePolicies, stats.expiredPolicies], backgroundColor: ['#2c3e8f', '#e26d5c'] }] }
+            });
+            
+            // Expiring list
+            const expiringList = stats.expiringSoonList || [];
+            const ul = document.getElementById('expiringList');
+            ul.innerHTML = expiringList.map(p => `<li class="list-group-item d-flex justify-content-between">${p.policy_number} - ${p.customer_name} <span class="badge bg-warning">${p.expiry_date}</span></li>`).join('') || '<li class="list-group-item">No policies expiring soon</li>';
+            
+            // Recent policies
+            const recent = stats.recentPolicies || [];
+            document.getElementById('recentPolicies').innerHTML = `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Policy#</th><th>Customer</th><th>Expiry</th></tr></thead><tbody>${recent.map(p => `<tr><td>${p.policy_number}</td><td>${p.customer_name}</td><td>${p.expiry_date}</td></tr>`).join('')}</tbody></table></div>`;
+        } catch (err) {
+            document.getElementById('dynamicContent').innerHTML = `<div class="alert alert-danger">Dashboard error: ${err.message}</div>`;
+        }
+    }
+
+    // ---------- CUSTOMERS ----------
+    function renderCustomers() {
+        let html = `<div class="d-flex justify-content-between mb-3"><h5>All Customers</h5><button class="btn btn-accent" id="addCustomerBtn"><i class="fas fa-plus"></i> New Customer</button></div>
+        <div class="table-responsive"><table class="table table-bordered table-custom"><thead><tr><th>ID</th><th>Name</th><th>Mobile</th><th>Vehicle No</th><th>Policies Count</th><th>Actions</th></tr></thead><tbody>`;
+        customers.forEach(c => {
+            const policyCount = policies.filter(p => p.customer_id == c.id).length;
+            html += `<tr><td>${c.id}</td><td>${escapeHtml(c.name)}</td><td>${c.mobile}</td><td>${c.vehicle_number || '-'}</td><td>${policyCount}</td>
+            <td><button class="btn btn-sm btn-outline-primary edit-customer" data-id="${c.id}"><i class="fas fa-edit"></i></button> 
+            <button class="btn btn-sm btn-outline-danger delete-customer" data-id="${c.id}"><i class="fas fa-trash"></i></button></td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+        document.getElementById('dynamicContent').innerHTML = html;
+        
+        document.getElementById('addCustomerBtn')?.addEventListener('click', () => openCustomerModal());
+        document.querySelectorAll('.edit-customer').forEach(btn => btn.addEventListener('click', () => openCustomerModal(btn.dataset.id)));
+        document.querySelectorAll('.delete-customer').forEach(btn => btn.addEventListener('click', async () => {
+            if (confirm('Delete customer? All linked policies will also be removed.')) {
+                await callAPI('customers', 'DELETE', { id: btn.dataset.id });
+                await loadAllData();
+                showToast('Customer deleted successfully');
+            }
+        }));
+    }
+
+    // ---------- POLICIES ----------
+    function renderPolicies() {
+        let html = `<div class="d-flex justify-content-between mb-3"><h5>RSA Policies</h5><button class="btn btn-accent" id="addPolicyBtn"><i class="fas fa-plus"></i> New Policy</button></div>
+        <div class="table-responsive"><table class="table table-bordered table-custom"><thead><tr><th>Policy#</th><th>Customer</th><th>Vehicle</th><th>Expiry Date</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>`;
+        policies.forEach(p => {
+            const cust = customers.find(c => c.id == p.customer_id);
+            const today = new Date().toISOString().slice(0,10);
+            const status = p.expiry_date < today ? '<span class="badge bg-danger">Expired</span>' : '<span class="badge bg-success">Active</span>';
+            html += `<tr><td>${p.policy_number}</td><td>${cust?.name || 'N/A'}</td><td>${cust?.vehicle_number || '-'}</td><td>${p.expiry_date}</td><td>₹${p.price}</td><td>${status}</td>
+            <td><button class="btn btn-sm btn-info renew-policy" data-id="${p.id}" data-expiry="${p.expiry_date}"><i class="fas fa-sync-alt"></i> Renew</button>
+            <button class="btn btn-sm btn-primary edit-policy" data-id="${p.id}"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger delete-policy" data-id="${p.id}"><i class="fas fa-trash"></i></button></td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+        document.getElementById('dynamicContent').innerHTML = html;
+        
+        document.getElementById('addPolicyBtn')?.addEventListener('click', () => openPolicyModal());
+        document.querySelectorAll('.edit-policy').forEach(btn => btn.addEventListener('click', () => openPolicyModal(btn.dataset.id)));
+        document.querySelectorAll('.delete-policy').forEach(btn => btn.addEventListener('click', async () => {
+            if (confirm('Delete policy?')) {
+                await callAPI('policies', 'DELETE', { id: btn.dataset.id });
+                await loadAllData();
+                showToast('Policy deleted');
+            }
+        }));
+        document.querySelectorAll('.renew-policy').forEach(btn => btn.addEventListener('click', () => openRenewModal(btn.dataset.id, btn.dataset.expiry)));
+    }
+
+    // ---------- SEARCH ----------
+    function renderSearch() {
+        const html = `<div class="card p-4"><h5>🔍 Search Policies & Customers</h5><div class="row g-3"><div class="col-md-4"><select id="searchType" class="form-select"><option value="mobile">Mobile Number</option><option value="vehicle">Vehicle Number</option><option value="policy">Policy Number</option></select></div>
+        <div class="col-md-6"><input type="text" id="searchQuery" class="form-control" placeholder="Enter search term..."></div><div class="col-md-2"><button id="doSearch" class="btn btn-accent w-100">Search</button></div></div>
+        <div id="searchResults" class="mt-4"></div></div>`;
+        document.getElementById('dynamicContent').innerHTML = html;
+        document.getElementById('doSearch').addEventListener('click', async () => {
+            const type = document.getElementById('searchType').value;
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) return showToast('Enter search term', 'warning');
+            try {
+                const res = await callAPI('search', 'GET', { type, q: query });
+                let resultHtml = `<h6>Results (${res.results.length})</h6>`;
+                if (res.results.length === 0) resultHtml += '<div class="alert alert-info">No records found</div>';
+                else resultHtml += `<div class="list-group">${res.results.map(r => `<div class="list-group-item search-highlight"><strong>${r.type}</strong><br>${r.detail}</div>`).join('')}</div>`;
+                document.getElementById('searchResults').innerHTML = resultHtml;
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        });
+    }
+
+    // ---------- REMINDERS ----------
+    async function renderReminders() {
+        try {
+            const stats = await callAPI('dashboard-stats', 'GET');
+            const expiring = stats.expiringSoonList || [];
+            let html = `<div class="card p-3 mb-4"><h5><i class="fas fa-bell"></i> Expiry Alerts & Reminders</h5><p class="text-muted">Policies expiring within 30 days. Optional upgrade: SMS/WhatsApp (simulated demo)</p></div>
+            <div class="row"><div class="col-md-12"><ul class="list-group">`;
+            if (expiring.length === 0) html += `<li class="list-group-item">No policies expiring soon 🎉</li>`;
+            expiring.forEach(p => {
+                html += `<li class="list-group-item d-flex justify-content-between align-items-center">${p.policy_number} - ${p.customer_name} (Exp: ${p.expiry_date}) <button class="btn btn-sm btn-outline-warning sendReminderBtn" data-mobile="${p.mobile}" data-name="${p.customer_name}"><i class="fab fa-whatsapp"></i> Demo Reminder</button></li>`;
+            });
+            html += `</ul></div></div>`;
+            document.getElementById('dynamicContent').innerHTML = html;
+            document.querySelectorAll('.sendReminderBtn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showToast(`📱 Demo reminder sent to ${btn.dataset.name} (${btn.dataset.mobile}) via SMS/WhatsApp (upgrade feature)`, 'info');
+                });
+            });
+        } catch (err) {
+            document.getElementById('dynamicContent').innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+        }
+    }
+
+    // ---------- MODAL HANDLERS ----------
+    function openCustomerModal(id = null) {
+        if (id) {
+            const cust = customers.find(c => c.id == id);
+            if (cust) {
+                document.getElementById('customerId').value = cust.id;
+                document.getElementById('custName').value = cust.name;
+                document.getElementById('custMobile').value = cust.mobile;
+                document.getElementById('custVehicle').value = cust.vehicle_number || '';
+            }
+        } else {
+            document.getElementById('customerId').value = '';
+            document.getElementById('custName').value = '';
+            document.getElementById('custMobile').value = '';
+            document.getElementById('custVehicle').value = '';
+        }
+        const modalEl = document.getElementById('customerModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    async function openPolicyModal(id = null) {
+        const select = document.getElementById('policyCustomerId');
+        select.innerHTML = '<option value="">Select Customer</option>' + customers.map(c => `<option value="${c.id}">${c.name} (${c.mobile})</option>`).join('');
+        if (id) {
+            const policy = policies.find(p => p.id == id);
+            if (policy) {
+                document.getElementById('policyId').value = policy.id;
+                document.getElementById('policyNumber').value = policy.policy_number;
+                document.getElementById('policyExpiry').value = policy.expiry_date;
+                document.getElementById('policyPrice').value = policy.price;
+                document.getElementById('policyCustomerId').value = policy.customer_id;
+            }
+        } else {
+            document.getElementById('policyId').value = '';
+            document.getElementById('policyNumber').value = '';
+            document.getElementById('policyExpiry').value = '';
+            document.getElementById('policyPrice').value = '1499';
+            document.getElementById('policyCustomerId').value = '';
+        }
+        const modalEl = document.getElementById('policyModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function openRenewModal(policyId, currentExpiry) {
+        document.getElementById('renewPolicyId').value = policyId;
+        document.getElementById('currentExpiry').innerText = currentExpiry;
+        let nextYear = new Date(currentExpiry);
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        document.getElementById('newExpiryDate').value = nextYear.toISOString().slice(0, 10);
+        const modalEl = document.getElementById('renewModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    // Helper: escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Attach event listeners for modals after DOM is ready
+    document.getElementById('saveCustomerBtn')?.addEventListener('click', async () => {
+        const id = document.getElementById('customerId').value;
+        const payload = {
+            name: document.getElementById('custName').value,
+            mobile: document.getElementById('custMobile').value,
+            vehicle_number: document.getElementById('custVehicle').value
+        };
+        if (!payload.name || !payload.mobile) return showToast('Name and Mobile are required', 'danger');
+        try {
+            if (id) await callAPI('customers', 'PUT', { id, ...payload });
+            else await callAPI('customers', 'POST', payload);
+            const modalEl = document.getElementById('customerModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+            await loadAllData();
+            showToast('Customer saved successfully');
+        } catch (err) { showToast(err.message, 'danger'); }
+    });
+
+    document.getElementById('savePolicyBtn')?.addEventListener('click', async () => {
+        const id = document.getElementById('policyId').value;
+        const payload = {
+            customer_id: document.getElementById('policyCustomerId').value,
+            policy_number: document.getElementById('policyNumber').value,
+            expiry_date: document.getElementById('policyExpiry').value,
+            price: document.getElementById('policyPrice').value
+        };
+        if (!payload.customer_id) return showToast('Select a customer', 'danger');
+        if (!payload.policy_number) return showToast('Policy number required', 'danger');
+        try {
+            if (id) await callAPI('policies', 'PUT', { id, ...payload });
+            else await callAPI('policies', 'POST', payload);
+            const modalEl = document.getElementById('policyModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+            await loadAllData();
+            showToast('Policy saved successfully');
+        } catch (err) { showToast(err.message, 'danger'); }
+    });
+
+    document.getElementById('confirmRenewBtn')?.addEventListener('click', async () => {
+        const policyId = document.getElementById('renewPolicyId').value;
+        const newExpiry = document.getElementById('newExpiryDate').value;
+        if (!newExpiry) return showToast('Select new expiry date', 'warning');
+        try {
+            await callAPI('renew', 'POST', { id: policyId, new_expiry: newExpiry });
+            const modalEl = document.getElementById('renewModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+            await loadAllData();
+            showToast('Policy renewed successfully!', 'success');
+        } catch (err) { showToast(err.message, 'danger'); }
+    });
+
+    // Navigation & Logout
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = link.getAttribute('data-page');
+            loadAllData();
+        });
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        if (confirm('Logout?')) {
+            sessionStorage.removeItem('loggedIn');
+            location.reload();
+        }
+    });
+    document.getElementById('liveDate').innerText = new Date().toLocaleDateString('en-IN');
+
+    // Simple login protection (hardcoded password)
+    if (!sessionStorage.getItem('loggedIn')) {
+        let pwd = prompt("Admin Login - Enter Password:");
+        if (pwd === 'admin123') {
+            sessionStorage.setItem('loggedIn', 'true');
+        } else {
+            document.body.innerHTML = '<div class="alert alert-danger m-5 text-center">Access Denied. Invalid Password.</div>';
+            throw new Error('Unauthorized');
+        }
+    }
+    loadAllData();
+});
+</script>
+</body>
+</html>
