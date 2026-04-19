@@ -172,7 +172,7 @@ async function renderDashboard() {
 
         const recent = stats.recentPolicies || [];
         const recentDiv = document.getElementById('recentPolicies');
-        if (recentDiv) recentDiv.innerHTML = `<div class="table-wrapper"><table class="data-table"><thead><tr><th>Policy#</th><th>Customer</th><th>Expiry</th></tr></thead><tbody>${recent.map(p => `<tr><td>${p.policy_number}</td><td>${p.customer_name}</td><td>${p.expiry_date}</td></tr>`).join('')}</tbody></table></div>`;
+        if (recentDiv) recentDiv.innerHTML = `<div class="table-wrapper"><table class="data-table"><thead><tr><th>Policy</th><th>Customer</th><th>Expiry</th></tr></thead><tbody>${recent.map(p => `<tr><td>${p.policy_number}</td><td>${p.customer_name}</td><td>${p.expiry_date}</td></tr>`).join('')}</tbody></table></div>`;
     } catch (err) {
         document.getElementById('dynamicContent').innerHTML = `<div class="alert alert-danger">Dashboard error: ${err.message}</div>`;
     }
