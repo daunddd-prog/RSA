@@ -205,7 +205,7 @@ function renderCustomers() {
 // ==================== POLICIES ====================
 function renderPolicies() {
     let html = `<div class="d-flex justify-content-between align-items-center mb-4"><h3>RSA Policies</h3><button class="btn btn-primary" id="addPolicyBtn"><i class="fas fa-plus"></i> New Policy</button></div>
-    <div class="table-wrapper"><table class="data-table"><thead><tr><th>Policy#</th><th>Customer</th><th>Vehicle</th><th>Expiry</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>`;
+    <div class="table-wrapper"><table class="data-table"><thead><tr><th>Policy</th><th>Customer</th><th>Vehicle</th><th>Expiry</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>`;
     policies.forEach(p => {
         const cust = customers.find(c => c.id == p.customer_id);
         const today = new Date().toISOString().slice(0,10);
