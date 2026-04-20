@@ -1,199 +1,493 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Customer Portal | Realtime Service</title>
-
-<!-- Bootstrap -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-<style>
-body {
-    background: radial-gradient(circle at 10% 20%, rgba(15,25,45,0.98), #0a0f1e);
-    display:flex;align-items:center;justify-content:center;
-    min-height:100vh;margin:0;padding:20px;
-}
-.login-card {
-    max-width:480px;width:100%;
-    background:rgba(20,30,50,0.7);
-    backdrop-filter:blur(16px);
-    border-radius:30px;padding:35px;
-    border:1px solid rgba(255,255,255,0.2);
-}
-.brand{text-align:center;margin-bottom:25px;}
-.brand h2{color:#fff;}
-.form-control{
-    background:rgba(0,0,0,0.5);
-    border-radius:25px;color:#fff;
-}
-.btn-login{
-    background:#ff7b2c;border:none;
-    border-radius:30px;color:#fff;
-    padding:12px;width:100%;
-}
-.toast-container{position:fixed;bottom:20px;right:20px;}
-.customer-dashboard{max-width:1000px;width:100%;}
-.stat-card{
-    background:rgba(255,255,255,0.05);
-    padding:15px;border-radius:15px;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Customer Portal | Realtime Service</title>
+    <!-- Reuse existing style.css from admin portal -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome & Bootstrap (already in style.css but ensure) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+    /* Override body for fullscreen centered layout with animated gradient */
+    body {
+        background: radial-gradient(circle at 10% 20%, rgba(15, 25, 45, 0.98), #0a0f1e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        position: relative;
+        overflow-x: hidden;
+    }
+    /* Animated background particles effect */
+    body::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: radial-gradient(rgba(255,123,44,0.15) 1px, transparent 1px);
+        background-size: 40px 40px;
+        animation: moveBackground 20s linear infinite;
+        pointer-events: none;
+    }
+    @keyframes moveBackground {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-40px); }
+    }
+    /* Attractive login card – FIXED overflow */
+    .login-card {
+        max-width: 480px;
+        width: 100%;
+        background: rgba(20, 30, 50, 0.7);
+        backdrop-filter: blur(16px);
+        border-radius: 48px;
+        padding: 40px 32px;
+        border: 1px solid rgba(255,255,255,0.2);
+        box-shadow: 0 30px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,123,44,0.1) inset;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        animation: fadeInUp 0.6s ease-out;
+        box-sizing: border-box;
+    }
+    .login-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 40px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,123,44,0.3) inset;
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    /* Brand section with animated icon */
+    .brand {
+        text-align: center;
+        margin-bottom: 35px;
+    }
+    .brand-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #ff7b2c, #ff4d2c);
+        border-radius: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        box-shadow: 0 10px 25px rgba(255,123,44,0.4);
+        transition: all 0.3s;
+        animation: pulseGlow 2s infinite;
+    }
+    .brand-icon i {
+        font-size: 40px;
+        color: white;
+    }
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 0 0 rgba(255,123,44,0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(255,123,44,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,123,44,0); }
+    }
+    .brand h2 {
+        font-size: 32px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #ffffff, #ffb47c);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        letter-spacing: -0.5px;
+    }
+    .brand p {
+        color: #b0c4de;
+        font-size: 14px;
+        margin-top: 8px;
+        opacity: 0.8;
+    }
+    /* Form styling – FIXED overflow */
+    .form-group {
+        margin-bottom: 24px;
+        width: 100%;
+    }
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #ffb47c;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+    }
+    .input-with-icon {
+        position: relative;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .input-with-icon i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #ff7b2c;
+        font-size: 18px;
+        opacity: 0.7;
+        z-index: 2;
+    }
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 28px;
+        padding: 14px 20px 14px 48px;
+        color: white;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+    .form-control:focus {
+        background: rgba(0,0,0,0.7);
+        border-color: #ff7b2c;
+        box-shadow: 0 0 0 3px rgba(255,123,44,0.2);
+        outline: none;
+    }
+    /* Button */
+    .btn-login {
+        background: linear-gradient(135deg, #ff7b2c, #ff4d2c);
+        border: none;
+        padding: 14px;
+        border-radius: 40px;
+        font-weight: 700;
+        font-size: 16px;
+        width: 100%;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+    .btn-login:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 20px rgba(255,123,44,0.4);
+    }
+    .btn-login::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -60%;
+        width: 200%;
+        height: 200%;
+        background: rgba(255,255,255,0.2);
+        transform: rotate(25deg);
+        transition: all 0.5s;
+    }
+    .btn-login:hover::after {
+        left: 100%;
+    }
+    /* Footer */
+    .login-footer {
+        text-align: center;
+        margin-top: 28px;
+        font-size: 13px;
+        color: #7e8c8f;
+    }
+    /* Toast container */
+    .toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1100;
+    }
+    /* Dashboard styles (unchanged) */
+    .customer-dashboard { width: 100%; max-width: 1200px; margin: 0 auto; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 32px; }
+    .stat-card { background: rgba(255,255,255,0.05); border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; }
+    .stat-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-3px); }
+    .stat-card h3 { font-size: 32px; font-weight: 700; color: #ff7b2c; margin-bottom: 5px; }
+    .stat-card p { opacity: 0.7; margin: 0; }
+    .data-table { width: 100%; border-collapse: collapse; background: transparent; }
+    .data-table th { text-align: left; padding: 16px; background: rgba(0,0,0,0.3); color: #ffb47c; font-weight: 600; }
+    .data-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .data-table tr:hover { background: rgba(255,123,44,0.05); }
+    .table-wrapper { overflow-x: auto; background: rgba(255,255,255,0.03); border-radius: 24px; padding: 1px; }
+    .badge { padding: 5px 12px; border-radius: 40px; }
+    .reminder-list { list-style: none; padding: 0; }
+    .reminder-item { background: rgba(255,255,255,0.03); margin-bottom: 12px; padding: 16px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .welcome-text h3 { margin: 0; color: white; }
+    .welcome-text p { margin: 5px 0 0; opacity: 0.7; }
+    .logout-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 12px; color: #ff7b2c; font-weight: 600; transition: all 0.2s; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .logout-btn:hover { background: rgba(255,123,44,0.2); border-color: #ff7b2c; }
+    .btn-outline-warning { border-color: #ff7b2c; color: #ff7b2c; background: transparent; border-radius: 40px; padding: 6px 16px; transition: all 0.2s; }
+    .btn-outline-warning:hover { background: #ff7b2c; color: white; }
+    .loading-overlay { text-align: center; padding: 50px; }
+    .spinner { width: 48px; height: 48px; border: 3px solid rgba(255,123,44,0.2); border-top-color: #ff7b2c; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 15px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Responsive fix for small screens */
+    @media (max-width: 640px) {
+        .login-card {
+            padding: 30px 20px;
+            border-radius: 32px;
+        }
+        .brand-icon {
+            width: 60px;
+            height: 60px;
+        }
+        .brand-icon i {
+            font-size: 30px;
+        }
+        .brand h2 {
+            font-size: 26px;
+        }
+        .form-control {
+            padding: 12px 16px 12px 42px;
+            font-size: 14px;
+        }
+        .input-with-icon i {
+            left: 14px;
+            font-size: 16px;
+        }
+        .btn-login {
+            padding: 12px;
+            font-size: 14px;
+        }
+    }
 </style>
 </head>
-
 <body>
-<div id="appRoot"></div>
+    <div id="appRoot"></div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ======================= CONFIGURATION =======================
+        // 🔴 USE THE SAME APPS SCRIPT URL AS YOUR ADMIN PANEL 🔴
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec";
+        // =============================================================
 
-<script>
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec";
+        let currentCustomer = null;
+        let customerPolicies = [];
 
-let currentCustomer = null;
-let customerPolicies = [];
-
-async function callAPI(path, method, params = {}) {
-    try {
-        const url = new URL(APPS_SCRIPT_URL);
-        url.searchParams.append('path', path);
-        url.searchParams.append('method', method);
-
-        for (let key in params) {
-            url.searchParams.append(key, params[key]);
+        async function callAPI(path, method, params = {}) {
+            try {
+                const url = new URL(APPS_SCRIPT_URL);
+                url.searchParams.append('path', path);
+                url.searchParams.append('method', method);
+                for (let key in params) {
+                    if (params[key] !== undefined && params[key] !== null) {
+                        url.searchParams.append(key, params[key]);
+                    }
+                }
+                const response = await fetch(url.toString());
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data;
+            } catch (err) {
+                console.error('API call failed:', err);
+                throw new Error(err.message || 'Network error');
+            }
         }
 
-        const res = await fetch(url);
-        let data;
-
-        try {
-            data = await res.json();
-        } catch {
-            throw new Error("Invalid server response");
+        function showToast(message, type = 'success') {
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                const div = document.createElement('div');
+                div.className = 'toast-container';
+                document.body.appendChild(div);
+                container = div;
+            }
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center text-white bg-${type} border-0 mb-2`;
+            toastEl.setAttribute('role', 'alert');
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            container.appendChild(toastEl);
+            const bsToast = new bootstrap.Toast(toastEl, { delay: 3000 });
+            bsToast.show();
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
         }
 
-        if (!res.ok) throw new Error("Network error");
-        if (data.error) throw new Error(data.error);
+        function showLoading() {
+            document.getElementById('appRoot').innerHTML = `
+                <div class="loading-overlay">
+                    <div class="spinner"></div>
+                    <p>Loading...</p>
+                </div>
+            `;
+        }
 
-        return data;
-    } catch (err) {
-        throw new Error(err.message);
-    }
-}
+        // ========== ATTRACTIVE LOGIN PAGE ==========
+        function renderLogin() {
+            const html = `
+                <div class="login-card">
+                    <div class="brand">
+                        <div class="brand-icon">
+                            <i class="fas fa-car-side"></i>
+                        </div>
+                        <h2>Customer Portal</h2>
+                        <p>Realtime Service • RSA Policy Access</p>
+                    </div>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-phone-alt"></i> Mobile Number</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                                <input type="tel" id="loginMobile" class="form-control" placeholder="Enter registered mobile" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-file-alt"></i> Policy Number</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-hashtag"></i>
+                                <input type="text" id="loginPolicy" class="form-control" placeholder="Your RSA policy number" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-login">Access Your Policies <i class="fas fa-arrow-right ms-2"></i></button>
+                    </form>
+                    <div class="login-footer">
+                        <small>🔒 Secure login using your registered mobile & policy number</small>
+                    </div>
+                </div>
+            `;
+            document.getElementById('appRoot').innerHTML = html;
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        }
 
-function showToast(message, type='success'){
-    const map = {
-        success:'bg-success',
-        danger:'bg-danger',
-        info:'bg-info'
-    };
+        async function handleLogin(e) {
+            e.preventDefault();
+            const mobile = document.getElementById('loginMobile').value.trim();
+            const policyNumber = document.getElementById('loginPolicy').value.trim();
+            if (!mobile || !policyNumber) {
+                showToast('Please enter both mobile and policy number', 'danger');
+                return;
+            }
 
-    let container=document.querySelector('.toast-container');
-    if(!container){
-        container=document.createElement('div');
-        container.className='toast-container';
-        document.body.appendChild(container);
-    }
+            showLoading();
+            try {
+                const [custData, polData] = await Promise.all([
+                    callAPI('customers', 'GET'),
+                    callAPI('policies', 'GET')
+                ]);
+                const customers = custData.customers || [];
+                const policies = polData.policies || [];
 
-    const el=document.createElement('div');
-    el.className=`toast text-white ${map[type]}`;
-    el.innerHTML=`
-    <div class="d-flex">
-        <div class="toast-body">${message}</div>
-        <button class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-    </div>`;
+                const customer = customers.find(c => String(c.mobile) === mobile);
+                if (!customer) throw new Error('No account found with this mobile number');
 
-    container.appendChild(el);
-    new bootstrap.Toast(el,{delay:3000}).show();
-}
+                const matchedPolicy = policies.find(p => p.customer_id == customer.id && p.policy_number === policyNumber);
+                if (!matchedPolicy) throw new Error('Policy number not found for this mobile. Please check and try again.');
 
-function renderLogin(){
-    document.getElementById('appRoot').innerHTML=`
-    <div class="login-card">
-        <div class="brand">
-            <h2>Customer Portal</h2>
-        </div>
-        <form id="loginForm">
-            <input type="tel" id="mobile" class="form-control mb-3" placeholder="Mobile" required>
-            <input type="text" id="policy" class="form-control mb-3" placeholder="Policy Number" required>
-            <button class="btn-login">Login</button>
-        </form>
-    </div>
-    `;
+                currentCustomer = customer;
+                customerPolicies = policies.filter(p => p.customer_id == customer.id);
+                renderDashboard();
+            } catch (err) {
+                renderLogin();
+                showToast(err.message, 'danger');
+            }
+        }
 
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-}
+        // ========== DASHBOARD (same as before but styled) ==========
+        function renderDashboard() {
+            const today = new Date().toISOString().slice(0,10);
+            let activeCount = 0, expiredCount = 0;
+            const expiringSoon = [];
 
-async function handleLogin(e){
-    e.preventDefault();
+            for (let p of customerPolicies) {
+                if (p.expiry_date < today) expiredCount++;
+                else {
+                    activeCount++;
+                    const expiryDate = new Date(p.expiry_date);
+                    const thirtyDaysLater = new Date();
+                    thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+                    if (expiryDate <= thirtyDaysLater) expiringSoon.push(p);
+                }
+            }
 
-    const mobile=document.getElementById('mobile').value.trim();
-    const policy=document.getElementById('policy').value.trim();
+            const html = `
+                <div class="customer-dashboard">
+                    <div class="header-bar">
+                        <div class="welcome-text">
+                            <h3>Welcome, ${escapeHtml(currentCustomer.name)}</h3>
+                            <p><i class="fas fa-phone-alt"></i> ${currentCustomer.mobile} &nbsp;|&nbsp; <i class="fas fa-car"></i> ${currentCustomer.vehicle_number}</p>
+                        </div>
+                        <button class="logout-btn" id="customerLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </div>
 
-    if(!/^[0-9]{10}$/.test(mobile)){
-        showToast("Invalid mobile number","danger");
-        return;
-    }
+                    <div class="stats-grid">
+                        <div class="stat-card"><h3>${customerPolicies.length}</h3><p>Total Policies</p></div>
+                        <div class="stat-card"><h3>${activeCount}</h3><p>Active Policies</p></div>
+                        <div class="stat-card"><h3>${expiredCount}</h3><p>Expired Policies</p></div>
+                        <div class="stat-card"><h3>${expiringSoon.length}</h3><p>Expiring Soon (30 days)</p></div>
+                    </div>
 
-    try{
-        const cust=await callAPI('customers','GET');
-        const pol=await callAPI('policies','GET');
+                    <div class="stat-card mb-4">
+                        <h5><i class="fas fa-file-alt"></i> Your Policies</h5>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>Policy Number</th><th>Expiry Date</th><th>Price</th><th>Status</th><th>Reminder</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${customerPolicies.map(p => {
+                                        const status = p.expiry_date < today ? '<span class="badge bg-danger">Expired</span>' : '<span class="badge bg-success">Active</span>';
+                                        return `
+                                            <tr>
+                                                <td>${escapeHtml(p.policy_number)}</td>
+                                                <td>${p.expiry_date}</td>
+                                                <td>₹${p.price}</td>
+                                                <td>${status}</td>
+                                                <td><button class="btn btn-sm btn-outline-warning remind-single-btn" data-policy="${escapeHtml(p.policy_number)}" data-expiry="${p.expiry_date}"><i class="fas fa-bell"></i> Remind Me</button></td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-        const customer=cust.customers.find(c=>c.mobile==mobile);
-        if(!customer) throw new Error("User not found");
+                    ${expiringSoon.length > 0 ? `
+                    <div class="stat-card">
+                        <h5><i class="fas fa-hourglass-half"></i> ⚠️ Policies Expiring Soon</h5>
+                        <div class="reminder-list">
+                            ${expiringSoon.map(p => `
+                                <div class="reminder-item">
+                                    <span><strong>${escapeHtml(p.policy_number)}</strong> expires on ${p.expiry_date}</span>
+                                    <button class="btn btn-sm btn-outline-warning remind-expiry-btn" data-policy="${escapeHtml(p.policy_number)}" data-expiry="${p.expiry_date}"><i class="fab fa-whatsapp"></i> Get Reminder</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
 
-        const match=pol.policies.find(p=>p.policy_number==policy && p.customer_id==customer.id);
-        if(!match) throw new Error("Policy not found");
+            document.getElementById('appRoot').innerHTML = html;
+            document.getElementById('customerLogoutBtn').addEventListener('click', () => {
+                currentCustomer = null;
+                customerPolicies = [];
+                renderLogin();
+            });
 
-        currentCustomer=customer;
-        customerPolicies=pol.policies.filter(p=>p.customer_id==customer.id);
+            document.querySelectorAll('.remind-single-btn, .remind-expiry-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const policy = btn.dataset.policy;
+                    const expiry = btn.dataset.expiry;
+                    showToast(`📱 Demo reminder sent for policy ${policy} (expires ${expiry}) to ${currentCustomer.mobile}. Upgrade for live SMS/WhatsApp.`, 'info');
+                });
+            });
+        }
 
-        renderDashboard();
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
 
-    }catch(err){
-        showToast(err.message,"danger");
-    }
-}
-
-function renderDashboard(){
-    document.getElementById('appRoot').innerHTML=`
-    <div class="customer-dashboard">
-        <h3 class="text-white mb-3">Welcome ${currentCustomer.name}</h3>
-
-        <div class="row mb-3">
-            <div class="col-md-3"><div class="stat-card text-white">Total: ${customerPolicies.length}</div></div>
-        </div>
-
-        <table class="table table-dark">
-            <thead>
-                <tr><th>Policy</th><th>Expiry</th></tr>
-            </thead>
-            <tbody>
-                ${customerPolicies.map(p=>`
-                    <tr>
-                        <td>${p.policy_number}</td>
-                        <td>${p.expiry_date}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-
-        <button onclick="logout()" class="btn btn-warning">Logout</button>
-    </div>
-    `;
-}
-
-function logout(){
-    currentCustomer=null;
-    customerPolicies=[];
-    renderLogin();
-}
-
-renderLogin();
-</script>
-
+        // Start
+        renderLogin();
+    </script>
 </body>
 </html>
