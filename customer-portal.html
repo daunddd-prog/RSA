@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Customer Portal | Realtime Service</title>
+    <!-- Reuse existing style.css from admin portal -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Additional customer‑specific overrides -->
+    <style>
+        /* Keep the overall dark theme but adjust for login centering */
+        body {
+            background: radial-gradient(circle at 10% 20%, rgba(15, 25, 45, 0.95), #0a0f1e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        /* Login card – matches the stat‑card style from style.css */
+        .login-card {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(20, 30, 50, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
+        }
+        /* Customer dashboard container – reuses .dashboard-container if needed, but we'll keep simple */
+        .customer-dashboard {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        /* Stats grid – reuses .stats-grid if defined in style.css, else define */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        /* Ensure table styles match admin portal */
+        .data-table th {
+            background: rgba(0,0,0,0.3);
+            color: #ffb47c;
+        }
+        .reminder-item {
+            background: rgba(255,255,255,0.03);
+            padding: 16px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .welcome-text h3 {
+            margin: 0;
+            color: white;
+        }
+        .welcome-text p {
+            margin: 5px 0 0;
+            opacity: 0.7;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 12px;
+            color: #ff7b2c;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logout-btn:hover {
+            background: rgba(255,123,44,0.2);
+            border-color: #ff7b2c;
+        }
+        @media (max-width: 768px) {
+            .login-card, .customer-dashboard { padding: 20px; }
+            .reminder-item { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <div id="appRoot"></div>
+
+    <script>
+        // ======================= CONFIGURATION =======================
+        // 🔴 USE THE SAME APPS SCRIPT URL AS YOUR ADMIN PANEL 🔴
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAtwwPznCDLyF47g96jKAG3IDRuXkMjPkGMkILwfnhaBohxOgPJJ-L2Y4HO1Hrl_2myQ/exec";
+        // =============================================================
+
+        let currentCustomer = null;      // { id, name, mobile, vehicle_number }
+        let customerPolicies = [];
+
+        // Helper: API call (identical to admin panel)
+        async function callAPI(path, method, params = {}) {
+            try {
+                const url = new URL(APPS_SCRIPT_URL);
+                url.searchParams.append('path', path);
+                url.searchParams.append('method', method);
+                for (let key in params) {
+                    if (params[key] !== undefined && params[key] !== null) {
+                        url.searchParams.append(key, params[key]);
+                    }
+                }
+                const response = await fetch(url.toString());
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data;
+            } catch (err) {
+                console.error('API call failed:', err);
+                throw new Error(err.message || 'Network error');
+            }
+        }
+
+        // Toast notification (same as admin)
+        function showToast(message, type = 'success') {
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                const div = document.createElement('div');
+                div.className = 'toast-container';
+                document.body.appendChild(div);
+                container = div;
+            }
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center text-white bg-${type} border-0 mb-2`;
+            toastEl.setAttribute('role', 'alert');
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            container.appendChild(toastEl);
+            const bsToast = new bootstrap.Toast(toastEl, { delay: 3000 });
+            bsToast.show();
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        function showLoading() {
+            document.getElementById('appRoot').innerHTML = `
+                <div class="loading-overlay">
+                    <div class="spinner"></div>
+                    <p>Loading...</p>
+                </div>
+            `;
+        }
+
+        // ==================== LOGIN PAGE ====================
+        function renderLogin() {
+            const html = `
+                <div class="login-card">
+                    <div class="brand" style="text-align: center; margin-bottom: 30px;">
+                        <div class="brand-icon" style="margin: 0 auto 15px;">
+                            <i class="fas fa-car-side"></i>
+                        </div>
+                        <h2 style="background: linear-gradient(135deg, #fff, #ff7b2c); -webkit-background-clip: text; background-clip: text; color: transparent;">Customer Portal</h2>
+                        <p style="color: #b0c4de;">Realtime Service • RSA Policy Access</p>
+                    </div>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Mobile Number *</label>
+                            <input type="tel" id="loginMobile" class="form-control" placeholder="Enter registered mobile" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Policy Number *</label>
+                            <input type="text" id="loginPolicy" class="form-control" placeholder="Enter any of your RSA policy numbers" required>
+                        </div>
+                        <button type="submit" class="btn-primary w-100 mt-2">Login →</button>
+                    </form>
+                    <div class="text-center mt-4">
+                        <small class="text-muted">Use your registered mobile and any policy number.</small>
+                    </div>
+                </div>
+            `;
+            document.getElementById('appRoot').innerHTML = html;
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const mobile = document.getElementById('loginMobile').value.trim();
+            const policyNumber = document.getElementById('loginPolicy').value.trim();
+            if (!mobile || !policyNumber) {
+                showToast('Please enter both mobile and policy number', 'danger');
+                return;
+            }
+
+            showLoading();
+            try {
+                const [custData, polData] = await Promise.all([
+                    callAPI('customers', 'GET'),
+                    callAPI('policies', 'GET')
+                ]);
+                const customers = custData.customers || [];
+                const policies = polData.policies || [];
+
+                const customer = customers.find(c => String(c.mobile) === mobile);
+                if (!customer) throw new Error('No account found with this mobile number');
+
+                const matchedPolicy = policies.find(p => p.customer_id == customer.id && p.policy_number === policyNumber);
+                if (!matchedPolicy) throw new Error('Policy number not found for this mobile. Please check and try again.');
+
+                // Login success
+                currentCustomer = customer;
+                customerPolicies = policies.filter(p => p.customer_id == customer.id);
+                renderDashboard();
+            } catch (err) {
+                renderLogin();
+                showToast(err.message, 'danger');
+            }
+        }
+
+        // ==================== CUSTOMER DASHBOARD ====================
+        function renderDashboard() {
+            const today = new Date().toISOString().slice(0,10);
+            let activeCount = 0, expiredCount = 0;
+            const expiringSoon = [];
+
+            for (let p of customerPolicies) {
+                if (p.expiry_date < today) expiredCount++;
+                else {
+                    activeCount++;
+                    const expiryDate = new Date(p.expiry_date);
+                    const thirtyDaysLater = new Date();
+                    thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+                    if (expiryDate <= thirtyDaysLater) expiringSoon.push(p);
+                }
+            }
+
+            const html = `
+                <div class="customer-dashboard">
+                    <div class="header-bar">
+                        <div class="welcome-text">
+                            <h3>Welcome, ${escapeHtml(currentCustomer.name)}</h3>
+                            <p><i class="fas fa-phone-alt"></i> ${currentCustomer.mobile} &nbsp;|&nbsp; <i class="fas fa-car"></i> ${currentCustomer.vehicle_number}</p>
+                        </div>
+                        <button class="logout-btn" id="customerLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card"><h3>${customerPolicies.length}</h3><p>Total Policies</p></div>
+                        <div class="stat-card"><h3>${activeCount}</h3><p>Active Policies</p></div>
+                        <div class="stat-card"><h3>${expiredCount}</h3><p>Expired Policies</p></div>
+                        <div class="stat-card"><h3>${expiringSoon.length}</h3><p>Expiring Soon (30 days)</p></div>
+                    </div>
+
+                    <div class="stat-card mb-4">
+                        <h5><i class="fas fa-file-alt"></i> Your Policies</h5>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>Policy Number</th><th>Expiry Date</th><th>Price</th><th>Status</th><th>Reminder</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${customerPolicies.map(p => {
+                                        const status = p.expiry_date < today ? '<span class="badge bg-danger">Expired</span>' : '<span class="badge bg-success">Active</span>';
+                                        return `
+                                            <tr>
+                                                <td>${escapeHtml(p.policy_number)}</td>
+                                                <td>${p.expiry_date}</td>
+                                                <td>₹${p.price}</td>
+                                                <td>${status}</td>
+                                                <td><button class="btn btn-sm btn-outline-warning remind-single-btn" data-policy="${escapeHtml(p.policy_number)}" data-expiry="${p.expiry_date}"><i class="fas fa-bell"></i> Remind Me</button></td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    ${expiringSoon.length > 0 ? `
+                    <div class="stat-card">
+                        <h5><i class="fas fa-hourglass-half"></i> ⚠️ Policies Expiring Soon</h5>
+                        <div class="reminder-list">
+                            ${expiringSoon.map(p => `
+                                <div class="reminder-item">
+                                    <span><strong>${escapeHtml(p.policy_number)}</strong> expires on ${p.expiry_date}</span>
+                                    <button class="btn btn-sm btn-outline-warning remind-expiry-btn" data-policy="${escapeHtml(p.policy_number)}" data-expiry="${p.expiry_date}"><i class="fab fa-whatsapp"></i> Get Reminder</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            document.getElementById('appRoot').innerHTML = html;
+            document.getElementById('customerLogoutBtn').addEventListener('click', () => {
+                currentCustomer = null;
+                customerPolicies = [];
+                renderLogin();
+            });
+
+            // Attach reminder button events (simulated demo)
+            document.querySelectorAll('.remind-single-btn, .remind-expiry-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const policy = btn.dataset.policy;
+                    const expiry = btn.dataset.expiry;
+                    showToast(`📱 Demo reminder sent for policy ${policy} (expires ${expiry}) to ${currentCustomer.mobile}. Upgrade for live SMS/WhatsApp.`, 'info');
+                });
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // Start with login page
+        renderLogin();
+    </script>
+</body>
+</html>
