@@ -455,3 +455,12 @@ body {
 .main-header.header-hidden {
     transform: translateY(-100%);
 }
+
+/* Customer portal link in sidebar */
+.nav-link.customer-portal-link {
+    background: rgba(255, 123, 44, 0.1);
+    border-left: 3px solid #ff7b2c;
+}
+.nav-link.customer-portal-link:hover {
+    background: rgba(255, 123, 44, 0.25);
+}
